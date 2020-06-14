@@ -4,7 +4,7 @@ import websockets
 import uuid
 import redis
 from host_script.order_helper import clear_all_orders, sell_less_than_buy, \
-    add_order, pop_highest_buy_order, pop_lowest_sell_order, get_new_order_if_necessary
+    add_order, pop_highest_buy_order, pop_lowest_sell_order, get_new_order_if_necessary, order_can_be_fulfilled
 from host_script.order_class import Order
 
 #USERS_AND_SUBSCRIBED_TOPIC = {}
@@ -44,7 +44,7 @@ def is_order(data):
 
 
 async def process_order(order: Order, size_to_fulfill):
-    if order.size - size_to_fulfill < 0.00001:
+    if order_can_be_fulfilled(order, size_to_fulfill):
         jjson = {
             "table": "orderBookL2",
             "action": "fulfilled",
@@ -117,7 +117,7 @@ async def ws_logic(websocket, path):
             if is_order(data):
                 side = data["op"]
                 price = float(data["price"])
-                size = float(data["size"])
+                size = int(data["size"])
                 gen_uuid = uuid.uuid4().hex
                 order_id = "order:" + gen_uuid
                 order = Order(order_id, side, size, price)

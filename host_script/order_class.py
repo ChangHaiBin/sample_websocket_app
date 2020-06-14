@@ -1,6 +1,6 @@
 
 class Order:
-    def __init__(self, order_id, side: str, size: float, price: float):
+    def __init__(self, order_id, side: str, size: int, price: float):
         # Test version, only support XBT
         self.symbol = "XBTUSD"
         if isinstance(order_id, bytes):

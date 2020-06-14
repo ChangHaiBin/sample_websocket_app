@@ -38,6 +38,7 @@ def pop_highest_buy_order(r: redis.client.Redis) -> Tuple[Order, bool]:
             redis_order_size: buy_order_id
         })
         if successful_remove:
+            buy_order_id = buy_order_id.decode('utf-8')
             order = Order(buy_order_id, "Buy", buy_order_size, buy_price)
             return (order, True)
         else:
@@ -58,14 +59,19 @@ def pop_lowest_sell_order(r: redis.client.Redis) -> Tuple[Order, bool]:
             redis_order_size: sell_order_id
         })
         if successful_remove:
+            sell_order_id = sell_order_id.decode('utf-8')
             order = Order(sell_order_id, "Sell", sell_order_size, sell_price)
             return (order, True)
         else:
             return (None, False)
 
 
+def order_can_be_fulfilled(order: Order, size_to_fulfill: int):
+    return order.size - size_to_fulfill <= 0
+
+
 def get_new_order_if_necessary(r: redis.client.Redis, order: Order, size_to_fulfill) -> Tuple[Order, bool]:
-    if order.size - size_to_fulfill >= 0.00001:
+    if order_can_be_fulfilled(order, size_to_fulfill):
         new_order = Order(order_id=order.order_id,
                           side=order.side,
                           size=order.size - size_to_fulfill,
