@@ -49,12 +49,15 @@ For orders that are processed, some may be partially fulfilled
 ```
 
 # Redis Sorted Set
-Info are stored in Redis in the following sorted-set:
+Buy and sell prices are stored in Redis in the following sorted-set:
 ```
 sell_prices
 buy_prices
-order_size
 ```
-where the scores are sell_price/buy_price/order_size respectively, with value/key being the order_id.
+where the scores are sell_price/buy_price respectively, with value/key being the order_id.
 
-(Future work: Change order_size to hashset, because there is no need to sort based on order_size) 
+On the other hand, order sizes (buy or sell) are stored here:
+```
+order_sizes
+```
+where key is order_id, and value is order_size. 
