@@ -47,3 +47,14 @@ For orders that are processed, some may be partially fulfilled
 {"table": "orderBookL2", "action": "fulfilled", "data": [{"symbol": "XBTUSD", "id": "order:11acab48ca6e42c4bed3b71dbc2cd3ef", "side": "Buy"}]}
 {"table": "orderBookL2", "action": "partial_fulfilled", "data": [{"symbol": "XBTUSD", "id": "order:1b1fa7d74b86423f8ab647ef0d09aec7", "side": "Sell", "remaining_size": 1000.0}]}
 ```
+
+# Redis Sorted Set
+Info are stored in Redis in the following sorted-set:
+```
+sell_prices
+buy_prices
+order_size
+```
+where the scores are sell_price/buy_price/order_size respectively, with value/key being the order_id.
+
+(Future work: Change order_size to hashset, because there is no need to sort based on order_size) 
