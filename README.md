@@ -4,6 +4,8 @@
 
 This simple test version uses Websocket to input the buy and sell price, as a proof of concept. The actual Bitmex API only accept Buy and Sell order through REST API, not websocket.
 
+Also, the local Redis version I tested is Redis 3.0.504 in Windows, and so I don't have access to more recent Redis commands (in particular, ZPOPMIN, ZPOPMAX)
+
 # How to use:
 
 1. Run a local version of Redis on your computer.

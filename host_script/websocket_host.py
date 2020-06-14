@@ -3,8 +3,9 @@ import json
 import websockets
 import uuid
 import redis
-from host_script.order_helper import clear_all_orders, add_buy_order, add_sell_order, \
-    pop_highest_buy, pop_lowest_sell, get_new_buy_order, get_new_sell_order, sell_less_than_buy
+from host_script.order_helper import clear_all_orders, sell_less_than_buy, \
+    add_order, pop_highest_buy_order, pop_lowest_sell_order, get_new_order_if_necessary
+from host_script.order_class import Order
 
 #USERS_AND_SUBSCRIBED_TOPIC = {}
 USERS = set()
@@ -42,77 +43,67 @@ def is_order(data):
     return "op" in data and data["op"] in ("Buy", "Sell")
 
 
-async def process_order(symbol, order_side, order_uuid: bytes, order_price, order_size,
-                        size_to_fulfill):
-    if order_size - size_to_fulfill < 0.00001:
+async def process_order(order: Order, size_to_fulfill):
+    if order.size - size_to_fulfill < 0.00001:
         jjson = {
             "table": "orderBookL2",
             "action": "fulfilled",
-            "data": [{"symbol": symbol,
-                      "id": order_uuid.decode('utf-8'),
-                      "side": order_side}]}
-        await send_to_all_users_if_possible(json.dumps(jjson))
+            "data": [{"symbol": order.symbol,
+                      "id": order.order_id,
+                      "side": order.side}]}
     else:
         jjson = {
             "table": "orderBookL2",
             "action": "partial_fulfilled",
-            "data": [{"symbol": symbol,
-                      "id": order_uuid.decode('utf-8'),
-                      "side": order_side,
-                      "remaining_size": order_size - size_to_fulfill}]}
-        await send_to_all_users_if_possible(json.dumps(jjson))
+            "data": [{"symbol": order.symbol,
+                      "id": order.order_id,
+                      "side": order.side,
+                      "remaining_size": order.size - size_to_fulfill}]}
+    await send_to_all_users_if_possible(json.dumps(jjson))
 
 
 async def execute_order_if_possible():
     is_sell_less_than_buy = sell_less_than_buy(r)
     if not is_sell_less_than_buy:
         return
-    (buy_order_id, buy_price, buy_order_size) = pop_highest_buy(r)
-    (sell_order_id, sell_price, sell_order_size) = pop_lowest_sell(r)
+    (buy_order, buy_pop_successful) = pop_highest_buy_order(r)
+    (sell_order, sell_pop_successful) = pop_lowest_sell_order(r)
     while is_sell_less_than_buy:
-
-        if (buy_price is None) or (sell_price is None) or buy_price < sell_price:
-            add_buy_order(r, buy_order_id, buy_price, buy_order_size)
-            add_sell_order(r, sell_order_id, sell_price, sell_order_size)
+        if (not buy_pop_successful) or (not sell_pop_successful) or (buy_order.price < sell_order.price):
+            if buy_pop_successful:
+                add_order(r, buy_order)
+            if sell_pop_successful:
+                add_order(r, sell_order)
             return
 
-        size_to_fulfill = min(buy_order_size, sell_order_size)
-        await process_order("XBTUSD", "Buy", buy_order_id, buy_price, buy_order_size, size_to_fulfill)
-        await process_order("XBTUSD", "Sell", sell_order_id, sell_price, sell_order_size, size_to_fulfill)
+        size_to_fulfill = min(buy_order.size, sell_order.size)
+        await process_order(buy_order, size_to_fulfill)
+        await process_order(sell_order, size_to_fulfill)
 
-        (buy_order_id, buy_price, buy_order_size) = \
-            get_new_buy_order(r, buy_order_id, buy_price, buy_order_size, size_to_fulfill)
-        (sell_order_id, sell_price, sell_order_size) = \
-            get_new_sell_order(r, sell_order_id, sell_price, sell_order_size, size_to_fulfill)
+        (buy_order, buy_pop_successful) = get_new_order_if_necessary(r, buy_order, size_to_fulfill)
+        (sell_order, sell_pop_successful) = get_new_order_if_necessary(r, sell_order, size_to_fulfill)
 
 
-def assemble_insert_message(gen_uuid, side, size, price):
+def assemble_insert_message(order: Order):
     jjson = {
         "table": "orderBookL2",
         "action": "insert",
         "data": [
             {
-                "symbol": "XBTUSD",
-                "id": gen_uuid,
-                "side": side,
-                "size": size,
-                "price": price
+                "symbol": order.symbol,
+                "id": order.order_id,
+                "side": order.side,
+                "size": order.size,
+                "price": order.price
             }
         ]
     }
     return jjson
 
 
-async def record_order(side, gen_uuid, price, size):
-    order_key = "order:" + gen_uuid
-    if side == "Buy":
-        add_buy_order(r, order_key, price, size)
-    elif side == "Sell":
-        add_sell_order(r, order_key, price, size)
-    else:
-        raise Exception("")
-
-    jjson = assemble_insert_message(gen_uuid, side, size, price)
+async def record_order(order: Order):
+    add_order(r, order)
+    jjson = assemble_insert_message(order)
     await send_to_all_users_if_possible(json.dumps(jjson))
     await execute_order_if_possible()
 
@@ -128,7 +119,9 @@ async def ws_logic(websocket, path):
                 price = float(data["price"])
                 size = float(data["size"])
                 gen_uuid = uuid.uuid4().hex
-                await record_order(side, gen_uuid, price, size)
+                order_id = "order:" + gen_uuid
+                order = Order(order_id, side, size, price)
+                await record_order(order)
             else:
                 print("unsupported event: {}", data)
     except websockets.exceptions.ConnectionClosedError as e:
@@ -139,7 +132,6 @@ async def ws_logic(websocket, path):
 
 r = redis.StrictRedis(host='localhost', port=6379, db=0)
 clear_all_orders(r)
-r.close()
 start_server = websockets.serve(ws_logic, "localhost", 6789)
 
 asyncio.get_event_loop().run_until_complete(start_server)
