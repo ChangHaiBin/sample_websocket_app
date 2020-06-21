@@ -192,11 +192,21 @@ We assume that any price differences are absorbed by us. e.g. if a buyer is will
 
 ### Future works:
 
-We have a very basic test script (client_script.client3/client4) that generates 100 orders per second. Future works will involve stress-testing the program to see if it can handle high-frequency situation.
+#### Transactions
 
-Will need to review and verify the transactions are performed in one go (e.g. is it possible for the Redis part to succeed, but the MongoDB part to fail, or vice versa?)
+We will need to review and verify the transactions are performed in one go (e.g. is it possible for the Redis part to succeed, but the MongoDB part to fail, or vice versa?)
 
-Also need to verify first-in-first-out (e.g. If a buyer breaks up his order into 100 tiny pieces, will he order more likely to be fulfilled?)
+We may also consider using multi-document transactions when updating accounts for better guarantee, and see if that will add to latency.
 
+#### Isolate Order-matching Function
+
+We will also need to implement the order-matching part of the code as a separate component (i.e. the `execute_order_if_possible` function in `host_script.websocket_host.py`). 
+
+Right now, the order matching function is only called when there is a new order, which could potentially be a problem if the matching function fails (e.g. due to network issue, or failure to ZPOPMIN or ZPOPMAX) while executing a match, and the match is reverted, resulting in unmatched orders. 
+
+#### C++ Optimizations
+
+To potentially speed up the program, we could potentially hold 1000 highest buy/lowest sell orders in memory, reducing calls to Redis. 
  
-
+We could also group together account credit/debits to reduce calls to MongoDB.
+ 
