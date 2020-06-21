@@ -10,7 +10,7 @@ from host_script.order_class import Order
 import pymongo
 
 #USERS_AND_SUBSCRIBED_TOPIC = {}
-from host_script.pymongo_helper import add_pymongo_order, reset_database, pymongo_process_order
+from host_script.pymongo_helper import add_pymongo_order, reset_database, pymongo_process_order, pymongo_arbitrage_fee
 
 USERS = set()
 
@@ -109,6 +109,7 @@ async def execute_order_if_possible(r: redis.client.Redis, pm: pymongo.mongo_cli
         await process_order(sell_order, size_to_fulfill)
         pymongo_process_order(pm, buy_order, size_to_fulfill)
         pymongo_process_order(pm, sell_order, size_to_fulfill)
+        pymongo_arbitrage_fee(pm, buy_order=buy_order, sell_order=sell_order, size_to_fulfill=size_to_fulfill)
 
         (buy_order, buy_pop_successful) = get_new_order_if_necessary(r, buy_order, size_to_fulfill)
         (sell_order, sell_pop_successful) = get_new_order_if_necessary(r, sell_order, size_to_fulfill)

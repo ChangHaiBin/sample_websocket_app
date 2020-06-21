@@ -188,4 +188,15 @@ And MongoDB:
 
 ### Remark:
 
-We assume that any price differences are absorbed by us. e.g. if a buyer is willing to buy at $3.15, and a seller willing to sell at $3.11, then both of their orders are fulfilled at their requested price, and the $0.04 price difference is absorbed by us.
+We assume that any price differences are absorbed by us. e.g. if a buyer is willing to buy at $3.15, and a seller willing to sell at $3.11, then both of their orders are fulfilled at their requested price, and the $0.04 arbitrage is credited to the `admin` account.
+
+### Future works:
+
+We have a very basic test script (client_script.client3/client4) that generates 100 orders per second. Future works will involve stress-testing the program to see if it can handle high-frequency situation.
+
+Will need to review and verify the transactions are performed in one go (e.g. is it possible for the Redis part to succeed, but the MongoDB part to fail, or vice versa?)
+
+Also need to verify first-in-first-out (e.g. If a buyer breaks up his order into 100 tiny pieces, will he order more likely to be fulfilled?)
+
+ 
+

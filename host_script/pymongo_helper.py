@@ -10,7 +10,10 @@ def reset_database(pm: pymongo.mongo_client.MongoClient):
          "cash_amount": 10000, "microbitcoin_amount": 20000, "cash_on_hold": 0, "microbitcoin_on_hold": 0},
 
         {"username": "username2", "password": "password2",
-         "cash_amount": 10000, "microbitcoin_amount": 20000, "cash_on_hold": 0, "microbitcoin_on_hold": 0}
+         "cash_amount": 10000, "microbitcoin_amount": 20000, "cash_on_hold": 0, "microbitcoin_on_hold": 0},
+
+        {"username": "admin", "password": "admim",
+         "cash_amount": 0, "microbitcoin_amount": 0, "cash_on_hold": 0, "microbitcoin_on_hold": 0}
     ]
     pm["user_accounts"]["accounts"].insert_many(starting_db)
 
@@ -67,3 +70,17 @@ def pymongo_process_order(pm: pymongo.mongo_client.MongoClient, order: Order, si
                 }
             }
         )
+
+
+
+def pymongo_arbitrage_fee(pm: pymongo.mongo_client.MongoClient, buy_order: Order, sell_order: Order, size_to_fulfill):
+    pm["user_accounts"]["accounts"].update_one(
+        {
+            "username": "admin",
+        },
+        {
+            "$inc": {
+                "cash_amount": (size_to_fulfill) * (buy_order.price - sell_order.price),
+            }
+        }
+    )
