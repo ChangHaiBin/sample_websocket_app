@@ -61,6 +61,8 @@ class SampleSocket:
 ss = SampleSocket()
 ss.connect("ws://localhost:6789/")
 
+username = "username2"
+password = "password2"
 
 while True:
     print("==============================")
@@ -71,9 +73,11 @@ while True:
         price = float(input())
         print("Input size:")
         size = float(input())
-        jjson = {"op": command,
+        jjson = {"side": command,
                  "price": price,
-                 "size": size}
+                 "size": size,
+                 "username": username,
+                 "password": password}
         ss.ws.send(json.dumps(jjson))
     else:
         print(f"Unknown command {command}")
