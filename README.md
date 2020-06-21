@@ -8,7 +8,7 @@ Also, the local Redis version I tested is Redis 3.0.504 in Windows, and so I don
 
 # How to use:
 
-1. Run a local version of Redis and pymongo on your computer.
+1. Run a local version of Redis and MongoDB on your computer.
 
 2. Run host_script.websocket_host.py
 

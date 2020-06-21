@@ -12,7 +12,7 @@ def reset_database(pm: pymongo.mongo_client.MongoClient):
         {"username": "username2", "password": "password2",
          "cash_amount": 10000, "microbitcoin_amount": 20000, "cash_on_hold": 0, "microbitcoin_on_hold": 0},
 
-        {"username": "admin", "password": "admim",
+        {"username": "admin", "password": "admin",
          "cash_amount": 0, "microbitcoin_amount": 0, "cash_on_hold": 0, "microbitcoin_on_hold": 0}
     ]
     pm["user_accounts"]["accounts"].insert_many(starting_db)
