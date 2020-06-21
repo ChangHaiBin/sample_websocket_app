@@ -7,10 +7,10 @@ def reset_database(pm: pymongo.mongo_client.MongoClient):
     pm["user_accounts"]["accounts"].delete_many({})
     starting_db = [
         {"username": "username1", "password": "password1",
-         "cash_amount": 10000, "microbitcoin_amount": 10000, "cash_on_hold": 0, "microbitcoin_on_hold": 0},
+         "cash_amount": 10000, "microbitcoin_amount": 20000, "cash_on_hold": 0, "microbitcoin_on_hold": 0},
 
         {"username": "username2", "password": "password2",
-         "cash_amount": 10000, "microbitcoin_amount": 10000, "cash_on_hold": 0, "microbitcoin_on_hold": 0}
+         "cash_amount": 10000, "microbitcoin_amount": 20000, "cash_on_hold": 0, "microbitcoin_on_hold": 0}
     ]
     pm["user_accounts"]["accounts"].insert_many(starting_db)
 
